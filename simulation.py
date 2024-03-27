@@ -55,10 +55,9 @@ class UAV():
             self.Q_igt += w_ijt[j] * H
     
     def update_uncertainty_map(self,kn):
-        self.eta_igt = np.exp(-kn * abs(self.Q_igt))
+        self.eta_igt = np.exp(-kn * self.Q_igt)
 
-
-class MultiUAVs():
+class CooperativeSearch():
     def __init__(self, eta_init):
         self.nrows = eta_init.shape[0]
         self.ncols = eta_init.shape[1]
@@ -190,7 +189,7 @@ class SimEnv():
         self.ncols = ncols
         self.obstacles = obstacles
 
-    def plot_env(self, agents, prior_map=None, t=0, display=True):
+    def plot_env(self, agents, prior_map=None, t=0, agent_id=0, display=True):
         fig = plt.figure(figsize=(8,8))
         plt.grid(True, linestyle='--', color='gray', alpha=0.5)
         plt.xticks(np.arange(0,self.ncols+1))
@@ -201,7 +200,8 @@ class SimEnv():
 
         # Plot Prior Map
         if prior_map is not None:
-            plt.imshow(prior_map,cmap='spring')
+            plt.imshow(prior_map,cmap='viridis')#,vmin=0,vmax=1)
+            plt.colorbar()
 
         # Plot UAVs
         for n in range(len(agents)):
@@ -213,6 +213,7 @@ class SimEnv():
                 alpha=0.5)
             plt.gca().add_patch(circle)
             plt.scatter(agents[n].mu[0],agents[n].mu[1],c='r',marker='*')
+            plt.text(agents[n].mu[0],agents[n].mu[1]+1e-1,s=str(n),color='white')
 
         # Plot Obstacles
         if self.obstacles is not None:
@@ -228,7 +229,7 @@ class SimEnv():
         
         plt.xlabel("X (m)")
         plt.ylabel("Y (m)")
-        plt.title(f"Mission Space at {t} sec")
+        plt.title(f"Mission Space at {t} sec from Agent {agent_id}")
         if display:
             plt.show()
             return
