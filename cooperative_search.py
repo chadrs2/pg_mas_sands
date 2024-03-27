@@ -159,8 +159,6 @@ class CooperativeSearch():
             # Transmit updated probability map to neighbors based on Rc
             neighbor_idxs = self.get_neighbor_idxs(n, Rc)
             neighbors.append(neighbor_idxs)
-            # for neighbor in neighbor_idxs:
-                # self.agents[neighbor].add_neighbors_H(H_igt)
             Hs.append(H_igt)
         
         for i in range(self.N):
