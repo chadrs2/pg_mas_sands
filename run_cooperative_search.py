@@ -79,16 +79,21 @@ def main(args):
         
     if args.use_prior_map:
         print("Doing only cooperative motion")
-        # prior_map = np.ones((args.nrows,args.ncols)) / (args.nrows*args.ncols)
-        circle_center = (0, 0)  # Bottom left corner is (0, 0)
-        circle_radius = args.nrows//2
-        circle_width = args.nrows//4
-        hollow_radius = circle_radius//2
-        decay_rate = 1e-2
-        prior_map = generate_curved_line_image(
-            args.nrows, args.ncols, 
-            circle_center, circle_radius, circle_width, decay_rate, hollow_radius
-        )
+        if args.prior_map_type == 'unif':
+            prior_map = np.ones((args.nrows,args.ncols)) / (args.nrows*args.ncols)
+        elif args.prior_map_type == 'curve':
+            circle_center = (0, 0)  # Bottom left corner is (0, 0)
+            circle_radius = args.nrows//2
+            circle_width = args.nrows//4
+            hollow_radius = circle_radius//2
+            decay_rate = 1e-2
+            prior_map = generate_curved_line_image(
+                args.nrows, args.ncols, 
+                circle_center, circle_radius, circle_width, decay_rate, hollow_radius
+            )
+        else:
+            print("Incorrect map prior type")
+            assert(False)
     else:
         print("Doing both search and surveillance")
         prior_map = np.ones((args.nrows,args.ncols)) / (args.nrows*args.ncols)
@@ -211,6 +216,7 @@ def setup_parser():
     
     # Agent Init
     parser.add_argument('--use_prior_map',action='store_true',help="Use prior knowledge or not")
+    parser.add_argument('--prior_map_type',default='unif',type=str,help="Enter string of map type from [unif, curve]")
     parser.add_argument('--num_agents',default=5,type=int,help="Number of agents to simulate")
     parser.add_argument('--rand_mu0',action='store_true',help='Randomize starting agent positions')
     parser.add_argument('--unif_mu0',action='store_true',help='Uniformly spread starting agent positions')
