@@ -81,9 +81,9 @@ class CooperativeSearch():
         for x in range(-1,1+1):
             for y in range(-1,1+1):
                 if (cur_loc[0] + x >= 0) and \
-                    (cur_loc[1] + y >= 0) and \
-                    (cur_loc[0] + x < self.ncols) and \
-                    (cur_loc[1] + y < self.nrows):
+                        (cur_loc[1] + y >= 0) and \
+                        (cur_loc[0] + x < self.ncols) and \
+                        (cur_loc[1] + y < self.nrows):
                     if (x != 0 or y != 0) and self.eta_igt[cur_loc[1]+y, cur_loc[0]+x] > 0:
                         C.append((x,y))
         C.append((0,0))
@@ -103,7 +103,8 @@ class CooperativeSearch():
         for g_row in range(self.nrows):
             for g_col in range(self.ncols):
                 min_dist, min_agent = self.closest_agent(g_col,g_row)
-                performance += self.agents[min_agent].eta_igt[g_row,g_col] * np.exp(-min_dist) if min_dist <= self.agents[min_agent].Rs else 0.0
+                performance += self.agents[min_agent].eta_igt[g_row,g_col] * np.exp(-min_dist) \
+                    if min_dist <= self.agents[min_agent].Rs else 0.0
         return performance
     
     def compute_avg_uncertainty(self):
@@ -118,9 +119,11 @@ class CooperativeSearch():
         for g_row in range(self.nrows):
             for g_col in range(self.ncols):
                 min_dist, min_agent = self.closest_agent(g_col,g_row)
-                performance_i += self.agents[min_agent].eta_igt[g_row,g_col] * np.exp(-min_dist) if min_dist <= self.agents[min_agent].Rs else 0.0
+                performance_i += self.agents[min_agent].eta_igt[g_row,g_col] * np.exp(-min_dist) \
+                    if min_dist <= self.agents[min_agent].Rs else 0.0
                 min_dist, min_agent = self.closest_agent(g_col,g_row,agent_id)
-                performance_not_i += self.agents[min_agent].eta_igt[g_row,g_col] * np.exp(-min_dist) if min_dist <= self.agents[min_agent].Rs else 0.0
+                performance_not_i += self.agents[min_agent].eta_igt[g_row,g_col] * np.exp(-min_dist) \
+                    if min_dist <= self.agents[min_agent].Rs else 0.0
         return performance_i - performance_not_i
     
     def compute_exp_utility(self,agent_id,trial_action):
@@ -130,9 +133,11 @@ class CooperativeSearch():
         for g_row in range(self.nrows):
             for g_col in range(self.ncols):
                 min_dist, min_agent = self.closest_agent(g_col,g_row)
-                performance_i += self.agents[min_agent].eta_igt[g_row,g_col] * np.exp(-min_dist) if min_dist <= self.agents[min_agent].Rs else 0.0
+                performance_i += self.agents[min_agent].eta_igt[g_row,g_col] * np.exp(-min_dist) \
+                    if min_dist <= self.agents[min_agent].Rs else 0.0
                 min_dist, min_agent = self.closest_agent(g_col,g_row,agent_id)
-                performance_not_i += self.agents[min_agent].eta_igt[g_row,g_col] * np.exp(-min_dist) if min_dist <= self.agents[min_agent].Rs else 0.0
+                performance_not_i += self.agents[min_agent].eta_igt[g_row,g_col] * np.exp(-min_dist) \
+                    if min_dist <= self.agents[min_agent].Rs else 0.0
         self.update_agent_loc(agent_id, -trial_action)
         return performance_i - performance_not_i
     

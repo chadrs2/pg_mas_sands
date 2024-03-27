@@ -19,12 +19,14 @@ def random_placement(N, min_x, max_x, min_y, max_y):
 
     return x_values, y_values
 
-def generate_curved_line_image(nrows, ncols, circle_center, circle_radius, circle_width, decay_rate, hollow_radius):
+def generate_curved_line_image(nrows, ncols, 
+                               circle_center, circle_radius, circle_width, 
+                               decay_rate, hollow_radius):
     """
     Generates a 2D probability map with a high probability ridge along a circle.
 
     Args:
-        map_size: Tuple representing the size (width, height) of the map.
+        (ncols, nrows): Tuple representing the size (width, height) of the map.
         circle_center: Tuple representing the (x, y) coordinates of the circle's center (bottom left is origin).
         circle_radius: Float representing the radius of the circle.
         circle_width: Float representing the width of the high probability ridge.
@@ -128,7 +130,8 @@ def main(args):
     overall_coverage_performance.append(coop_search.compute_coverage_performance())
     itr = 0
 
-    while (overall_coverage_performance[-1] < args.coverage_thresh) if args.use_prior_map else (overall_coverage_performance[-1] > args.uncertainty_thresh):
+    while (overall_coverage_performance[-1] < args.coverage_thresh) if args.use_prior_map \
+            else (overall_coverage_performance[-1] > args.uncertainty_thresh):
 
         ## Optimal Coverage using binary log-linear learning
         for _ in range(N):
@@ -137,8 +140,10 @@ def main(args):
             Ui_a_prev = coop_search.compute_curr_utility(vi)
             Ui_a_exp = coop_search.compute_exp_utility(vi,trial_action)
             p = np.array([
-                np.exp(1/temp * Ui_a_prev) / ( np.exp(1/temp * Ui_a_prev) + np.exp(1/temp * Ui_a_exp) ),
-                np.exp(1/temp * Ui_a_exp) / ( np.exp(1/temp * Ui_a_prev) + np.exp(1/temp * Ui_a_exp) )
+                np.exp(1/temp * Ui_a_prev) / ( np.exp(1/temp * Ui_a_prev) \
+                                              + np.exp(1/temp * Ui_a_exp) ),
+                np.exp(1/temp * Ui_a_exp) / ( np.exp(1/temp * Ui_a_prev) \
+                                             + np.exp(1/temp * Ui_a_exp) )
             ])
             selected_idx = np.random.choice(2,p=p)
             if selected_idx == 0:
@@ -168,14 +173,16 @@ def main(args):
         if (args.num_epochs2plot > 0) and (itr % args.num_epochs2plot == 0):#% 25 == 0:
             if not args.use_prior_map:
                 for n in range(N):
-                    env.plot_env(coop_search.agents, coop_search.agents[n].eta_igt, t=itr, agent_id=n, display=False)
+                    env.plot_env(coop_search.agents, coop_search.agents[n].eta_igt, 
+                                 t=itr, agent_id=n, display=False)
                 plt.show()
             else:
                 env.plot_env(coop_search.agents, coop_search.eta_igt, t=itr)
     progress_bar.close()
     if not args.use_prior_map:
         for n in range(N):
-            env.plot_env(coop_search.agents, coop_search.agents[n].eta_igt, t=itr, agent_id=n, display=False)
+            env.plot_env(coop_search.agents, coop_search.agents[n].eta_igt, 
+                         t=itr, agent_id=n, display=False)
         plt.show()
     else:
         env.plot_env(coop_search.agents, coop_search.eta_igt, t=itr)
