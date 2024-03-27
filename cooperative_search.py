@@ -73,19 +73,9 @@ def main(args):
         N = int(np.sqrt(N)) * int(np.sqrt(N))
     else:
         xs, ys = straight_line_placement(N,min_x,max_x,min_y,max_y)
-    
-    agents = []
-    for n in range(N):
-        if args.heterogeneous_agents:
-            Rs = args.Rs + np.random.randint(-args.Rs//2,args.Rs//2)
-        else:
-            Rs = args.Rs
         
-        agents.append(
-            UAV(n, np.array([xs[n],ys[n]]), Rs)
-        )
-        # print(f"Agent {n} position ({xs[n]},{ys[n]})")
     if args.prior_map:
+        print("Doing only cooperative motion")
         # prior_map = np.ones((args.nrows,args.ncols)) / (args.nrows*args.ncols)
         circle_center = (0, 0)  # Bottom left corner is (0, 0)
         circle_radius = args.nrows//2
@@ -98,18 +88,43 @@ def main(args):
             circle_center, circle_radius, circle_width, decay_rate, hollow_radius
         )
     else:
+        print("Doing both search and surveillance")
         prior_map = np.ones((args.nrows,args.ncols)) / (args.nrows*args.ncols)
-    uav_fleet = MultiUAVs(prior_map)
-    uav_fleet.add_agents(agents)
     
     # Initialize Simulated Environment
-    env = SimEnv(args.nrows, args.ncols)
+    if args.add_obstacles:
+        obstacles = [
+            [(0,(3*args.nrows)//4), (args.ncols//2,(3*args.nrows)//4+2)],
+            [(args.ncols//2,0), (args.ncols//2+2,args.nrows//4)],
+        ]
+        # Update prior map to have 0 probability @ obstacle locations
+        for o in obstacles:
+            xy_start, xy_end = o
+            prior_map[xy_start[1]:xy_end[1], xy_start[0]:xy_end[0]] = 0.0
+        prior_map /= prior_map.sum()
+        env = SimEnv(args.nrows, args.ncols, obstacles)
+    else:
+        env = SimEnv(args.nrows, args.ncols)
+    
+    # Initialize Agents
+    agents = []
+    for n in range(N):
+        if args.heterogeneous_agents:
+            Rs = args.Rs + np.random.randint(-args.Rs//2,args.Rs//2)
+        else:
+            Rs = args.Rs
+        
+        agents.append(
+            UAV(n, np.array([xs[n],ys[n]]), Rs, prior_map)
+        )
+    uav_fleet = MultiUAVs(prior_map)
+    uav_fleet.add_agents(agents)
     print(uav_fleet.compute_coverage_performance())
-    env.plot_env(uav_fleet.agents, uav_fleet.eta)
+    env.plot_env(uav_fleet.agents, uav_fleet.eta_igt)
 
     # Run Cooperative Search with Multiple UAVs Algorithm (see Table 1)
     mission_space_understanding = np.inf
-    goal_understanding = 0.9
+    goal_understanding = 1000#0.9
     temp = 1e-1#0.2
     #while mission_space_understanding > goal_understanding:
     progress_bar = tqdm(total=args.max_itr, desc="Coverage Performance: ")
@@ -119,10 +134,8 @@ def main(args):
     while overall_coverage_performance[-1] < goal_understanding:
 
         # Optimal Coverage using binary log-linear learning
-        # vi = np.random.choice(N)
         for _ in range(N):
             vi = np.random.choice(N)
-            # print("Updating agent",vi)
             trial_action = uav_fleet.sample_trial_action(vi)
             Ui_a_prev = uav_fleet.compute_curr_utility(vi)
             Ui_a_exp = uav_fleet.compute_exp_utility(vi,trial_action)
@@ -136,9 +149,10 @@ def main(args):
             else:
                 selected_action = trial_action
             uav_fleet.update_agent_loc(vi, selected_action)
-            # if not args.prior_map:
-                # TODO: Sensor Observations and Information Fusion
-                # uav_fleet.sensor_obsv_and_fusion()
+            
+        if not args.prior_map:
+            # Sensor Observations and Information Fusion
+            uav_fleet.sensor_obsv_and_fusion(Rc=args.Rs*4,pc=0.9,pf=0.3,kn=1)
 
         # Update description text with computed loss
         curr_perf = uav_fleet.compute_coverage_performance()
@@ -150,10 +164,16 @@ def main(args):
 
         if itr >= args.max_itr:
             break
-        # if itr % 10 == 0:#% 25 == 0:
-        #     env.plot_env(uav_fleet.agents, uav_fleet.eta)
+        if itr % 10 == 0:#% 25 == 0:
+            if not args.prior_map:
+                env.plot_env(uav_fleet.agents, uav_fleet.agents[0].eta_igt)
+            else:
+                env.plot_env(uav_fleet.agents, uav_fleet.eta_igt)
     progress_bar.close()
-    env.plot_env(uav_fleet.agents, uav_fleet.eta)
+    if not args.prior_map:
+        env.plot_env(uav_fleet.agents, uav_fleet.agents[0].eta_igt)
+    else:
+        env.plot_env(uav_fleet.agents, uav_fleet.eta_igt)
     
     plt.figure()
     plt.plot(overall_coverage_performance)
@@ -171,10 +191,10 @@ def setup_parser():
     # Environment Init
     parser.add_argument('--nrows',default=10,type=int,help="Number of rows of cells")
     parser.add_argument('--ncols',default=10,type=int,help="Number of columns of cells")
-    parser.add_argument('--prior_map',action='store_true',help="Use prior knowledge or not")
     parser.add_argument('--add_obstacles',action='store_true',help="Add rectangle obstacles")
     
     # Agent Init
+    parser.add_argument('--prior_map',action='store_true',help="Use prior knowledge or not")
     parser.add_argument('--num_agents',default=5,type=int,help="Number of agents to simulate")
     parser.add_argument('--rand_mu0',action='store_true',help='Randomize starting agent positions')
     parser.add_argument('--unif_mu0',action='store_true',help='Uniformly spread starting agent positions')
