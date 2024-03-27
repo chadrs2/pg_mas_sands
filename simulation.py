@@ -108,6 +108,12 @@ class CooperativeSearch():
                 performance += self.agents[min_agent].eta_igt[g_row,g_col] * np.exp(-min_dist) if min_dist <= self.agents[min_agent].Rs else 0.0
         return performance
     
+    def compute_avg_uncertainty(self):
+        avg_uncertainty = 0
+        for n in range(len(self.agents)):
+            avg_uncertainty += self.agents[n].eta_igt.sum()
+        return avg_uncertainty / (len(self.agents)*self.nrows*self.ncols)
+    
     def compute_curr_utility(self,agent_id,):
         performance_i = 0
         performance_not_i = 0

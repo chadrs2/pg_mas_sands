@@ -122,7 +122,7 @@ def main(args):
 
     # Run Cooperative Search with Multiple UAVs Algorithm (see Table 1)
     goal_understanding = 0.9
-    min_uncertainty = 1e-4
+    min_uncertainty = 1e-2
     temp = args.temp
     #while mission_space_understanding > goal_understanding:
     progress_bar = tqdm(total=args.max_itr, desc="Coverage Performance: ")
@@ -154,8 +154,12 @@ def main(args):
             coop_search.sensor_obsv_and_fusion(Rc=args.Rs*4,pc=0.9,pf=0.3,kn=1)
 
         # Update description text with computed loss
-        curr_perf = coop_search.compute_coverage_performance()
-        progress_bar.set_description("Coverage Performance: {:.6f}".format(curr_perf))        
+        if args.prior_map:
+            curr_perf = coop_search.compute_coverage_performance()
+            progress_bar.set_description("Coverage Performance: {:.6f}".format(curr_perf))        
+        else:
+            curr_perf = coop_search.compute_avg_uncertainty()
+            progress_bar.set_description("Average Uncertainty: {:.6f}".format(curr_perf))
         # Update progress bar
         progress_bar.update()
         overall_coverage_performance.append(curr_perf)
@@ -181,7 +185,10 @@ def main(args):
     plt.figure()
     plt.plot(overall_coverage_performance)
     plt.xlabel("Iterations")
-    plt.ylabel("Overall performance of coverage")
+    if args.prior_map:
+        plt.ylabel("Overall performance of coverage")
+    else:
+        plt.ylabel("Average Uncertainty")
     plt.show()
     return
 
