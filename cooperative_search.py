@@ -85,7 +85,10 @@ class CooperativeSearch():
                         (cur_loc[0] + x < self.ncols) and \
                         (cur_loc[1] + y < self.nrows):
                     if (x != 0 or y != 0) and self.eta_igt[cur_loc[1]+y, cur_loc[0]+x] > 0:
-                        C.append((x,y))
+                        # C.append((x,y))
+                        x_scaled = x * self.agents[agent_id].Rs / 2
+                        y_scaled = y * self.agents[agent_id].Rs / 2
+                        C.append((x_scaled,y_scaled))
         C.append((0,0))
         return C
     

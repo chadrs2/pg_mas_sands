@@ -18,7 +18,7 @@ class SimEnv():
 
         # Plot Prior Map
         if prior_map is not None:
-            plt.imshow(prior_map,cmap='viridis')#,vmin=0,vmax=1)
+            plt.imshow(prior_map,cmap='viridis',vmin=0,vmax=1)
             plt.colorbar()
 
         # Plot UAVs

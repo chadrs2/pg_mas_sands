@@ -1,3 +1,4 @@
+import os
 from argparse import ArgumentParser
 import numpy as np
 import matplotlib.pyplot as plt
@@ -56,6 +57,8 @@ def generate_curved_line_image(nrows, ncols,
 
 def main(args):
     np.random.seed(123)
+    if len(args.save_folder) > 0:
+        os.makedirs(args.save_folder, exist_ok=True)
 
     # Initialize agents and starting locations
     N = args.num_agents
@@ -103,7 +106,7 @@ def main(args):
         obstacles = [
             [(0,(3*args.nrows)//4), (args.ncols//2,(3*args.nrows)//4+2)],
             [(args.ncols//2,0), (args.ncols//2+2,args.nrows//4)],
-        ]
+        ] # two rectangles (representing walls)
         # Update prior map to have 0 probability @ obstacle locations
         for o in obstacles:
             xy_start, xy_end = o
@@ -126,7 +129,9 @@ def main(args):
         )
     coop_search = CooperativeSearch(prior_map)
     coop_search.add_agents(agents)
-    env.plot_env(coop_search.agents, coop_search.eta_igt)
+    fig = env.plot_env(coop_search.agents, coop_search.eta_igt,t=0,display=False)
+    fig.savefig(args.save_folder+f"all_agents_t0.png")
+    plt.close(fig)
 
     # Run Cooperative Search with Multiple UAVs Algorithm (see Table 1)
     temp = args.temp
@@ -159,7 +164,7 @@ def main(args):
             
         if not args.use_prior_map:
             ## Sensor Observations and Information Fusion
-            coop_search.sensor_obsv_and_fusion(Rc=args.Rs*4,pc=0.9,pf=0.3,kn=1)
+            coop_search.sensor_obsv_and_fusion(Rc=args.Rc,pc=0.9,pf=0.3,kn=1)
 
         # Update description text with computed loss
         if args.use_prior_map:
@@ -178,17 +183,21 @@ def main(args):
         if (args.num_epochs2plot > 0) and (itr % args.num_epochs2plot == 0):#% 25 == 0:
             if not args.use_prior_map:
                 for n in range(N):
-                    env.plot_env(coop_search.agents, coop_search.agents[n].eta_igt, 
+                    fig = env.plot_env(coop_search.agents, coop_search.agents[n].eta_igt, 
                                  t=itr, agent_id=n, display=False)
-                plt.show()
+                    fig.savefig(args.save_folder+f"agent{n}_t{itr}.png")
+                    plt.close(fig)
+                # plt.show()
             else:
-                env.plot_env(coop_search.agents, coop_search.eta_igt, t=itr)
+                fig = env.plot_env(coop_search.agents, coop_search.eta_igt, t=itr, display=False)
     progress_bar.close()
     if not args.use_prior_map:
         for n in range(N):
-            env.plot_env(coop_search.agents, coop_search.agents[n].eta_igt, 
+            fig = env.plot_env(coop_search.agents, coop_search.agents[n].eta_igt, 
                          t=itr, agent_id=n, display=False)
-        plt.show()
+            fig.savefig(args.save_folder+f"agent{n}_t{itr}.png")
+            plt.close(fig)
+        # plt.show()
     else:
         env.plot_env(coop_search.agents, coop_search.eta_igt, t=itr)
     
@@ -205,8 +214,10 @@ def main(args):
 
 def setup_parser():
     parser = ArgumentParser()
+
     # Iteration Params
     parser.add_argument('--max_itr',default=100,type=int)
+    parser.add_argument('--save_folder',type=str,help="folder/to/save/plots/")
 
     # Environment Init
     parser.add_argument('--nrows',default=10,type=int,help="Number of rows of cells")
@@ -221,6 +232,7 @@ def setup_parser():
     parser.add_argument('--rand_mu0',action='store_true',help='Randomize starting agent positions')
     parser.add_argument('--unif_mu0',action='store_true',help='Uniformly spread starting agent positions')
     parser.add_argument('--Rs',default=5,type=float,help="Sensor range of agents")
+    parser.add_argument('--Rc',default=5,type=float,help="Communication range between agents")
     parser.add_argument('--heterogeneous_agents',action='store_true',help="Give agents random Rs's (i.e. Rs+rand(Rs/2))")
     parser.add_argument('--temp',default=0.2,type=float,help="Temperature parameter for utility calculations")
 
